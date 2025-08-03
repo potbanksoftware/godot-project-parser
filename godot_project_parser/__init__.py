@@ -31,3 +31,8 @@ __copyright__: str = "2025 Dominic Davis-Foster"
 __license__: str = "MIT License"
 __version__: str = "0.0.0"
 __email__: str = "dominic@davis-foster.co.uk"
+
+__all__ = ("loads", "load", "TOMLDecodeError")
+
+# this package
+from ._parser import TOMLDecodeError, load, loads
