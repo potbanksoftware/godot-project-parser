@@ -2,7 +2,7 @@
 #
 #  types.py
 """
-Custom types for parsing project.godot
+Custom types for parsing ``project.godot``.
 """
 #
 #  Copyright © 2025 Dominic Davis-Foster <dominic@davis-foster.co.uk>
@@ -34,6 +34,9 @@ __all__ = ["GodotObject", "PackedStringArray"]
 
 
 class PackedStringArray(List[str]):
+	"""
+	Represents godot's ``PackedStringArray`` type.
+	"""
 
 	def __repr__(self) -> str:
 		return f"PackedStringArray({super().__repr__()})"
@@ -41,5 +44,9 @@ class PackedStringArray(List[str]):
 
 @dataclass
 class GodotObject:
+	"""
+	Represents godot's ``Object`` type.
+	"""
+
 	name: str
 	kwargs: Dict[str, Any]

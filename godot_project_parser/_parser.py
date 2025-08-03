@@ -32,7 +32,7 @@ Internal tomli-based parser.
 # stdlib
 import sys
 from types import MappingProxyType
-from typing import IO, Any, Dict, Final, FrozenSet, Iterable, List, Optional, Tuple, Type, Union
+from typing import IO, Any, Dict, Final, FrozenSet, Iterable, List, Optional, Set, Tuple, Type, Union
 
 # 3rd party
 from tomli._re import RE_DATETIME, RE_LOCALTIME, RE_NUMBER, match_to_datetime, match_to_localtime, match_to_number
@@ -116,20 +116,22 @@ BASIC_STR_ESCAPE_REPLACEMENTS: Final = MappingProxyType({
 
 
 class DEPRECATED_DEFAULT:
-	"""Sentinel to be used as default arg during deprecation
-    period of TOMLDecodeError's free-form arguments."""
+	"""
+	Sentinel to be used as default arg during deprecation period of TOMLDecodeError's free-form arguments.
+	"""
 
 
 class TOMLDecodeError(ValueError):
-	"""An error raised if a document is not valid TOML.
+	"""
+	An error raised if a document is not valid TOML.
 
-    Adds the following attributes to ValueError:
-    msg: The unformatted error message
-    doc: The TOML document being parsed
-    pos: The index of doc where parsing failed
-    lineno: The line corresponding to pos
-    colno: The column corresponding to pos
-    """
+	Adds the following attributes to ValueError:
+	msg: The unformatted error message
+	doc: The TOML document being parsed
+	pos: The index of doc where parsing failed
+	lineno: The line corresponding to pos
+	colno: The column corresponding to pos
+	"""
 
 	def __init__(
 			self,
@@ -187,7 +189,7 @@ def load(__fp: IO[bytes], *, parse_float: ParseFloat = float) -> Dict[str, Any]:
 	return loads(s, parse_float=parse_float)
 
 
-def loads(__s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # noqa: C901
+def loads(__s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
 	"""Parse TOML from a string."""
 
 	# The spec allows converting "\r\n" to "\n", even in string
@@ -265,7 +267,7 @@ class Flags:
 
 	def __init__(self) -> None:
 		self._flags: Dict[str, Dict[Any, Any]] = {}
-		self._pending_flags: set[Tuple[Key, int]] = set()
+		self._pending_flags: Set[Tuple[Key, int]] = set()
 
 	def add_pending(self, key: Key, flag: int) -> None:
 		self._pending_flags.add((key, flag))
@@ -333,7 +335,7 @@ class NestedDict:
 				cont = cont[-1]
 			if not isinstance(cont, dict):
 				raise KeyError("There is no nest behind this key")
-		return cont  # type: ignore[no-any-return]
+		return cont
 
 	def append_nest_to_list(self, key: Key) -> None:
 		cont = self.get_or_create_nest(key[:-1])
@@ -387,9 +389,10 @@ def skip_until(
 
 def skip_comment(src: str, pos: Pos) -> Pos:
 	try:
-		char: Optional[str] = src[pos]
+		char: str = src[pos]
 	except IndexError:
-		char = None
+		return pos
+
 	if char in "#;":
 		return skip_until(src, pos + 1, '\n', error_on=ILLEGAL_COMMENT_CHARS, error_on_eof=False)
 	return pos
@@ -479,7 +482,7 @@ def parse_key_value_pair(src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: 
 		char: Optional[str] = src[pos]
 	except IndexError:
 		char = None
-	if char not in "=:":
+	if char is None or char not in "=:":
 		raise TOMLDecodeError("Expected '=' or ':' after a key in a key/value pair", src, pos)
 	pos += 1
 	pos = skip_chars(src, pos, TOML_WS)
@@ -696,9 +699,7 @@ def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> Tuple[Pos, str]:
 		pos += 1
 
 
-def parse_value(  # noqa: C901
-		src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int
-		) -> Tuple[Pos, Any]:
+def parse_value(src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int) -> Tuple[Pos, Any]:
 	if nest_lvl > MAX_INLINE_NESTING:
 		# Pure Python should have raised RecursionError already.
 		# This ensures mypyc binaries eventually do the same.
@@ -736,11 +737,11 @@ def parse_value(  # noqa: C901
 
 	if char == 'P':
 		if src.startswith("PackedStringArray", pos):
-			return parse_packed_string_array(src, pos, parse_float)
+			return parse_packed_string_array(src, pos, parse_float, nest_lvl=nest_lvl)
 
 	if char == 'O':
 		if src.startswith("Object", pos):
-			return parse_object(src, pos)
+			return parse_object(src, pos, parse_float, nest_lvl=nest_lvl)
 
 	if char == 'n':
 		if src.startswith("null", pos):
@@ -789,13 +790,14 @@ def is_unicode_scalar_value(codepoint: int) -> bool:
 
 
 def make_safe_parse_float(parse_float: ParseFloat) -> ParseFloat:
-	"""A decorator to make `parse_float` safe.
+	"""
+	A decorator to make `parse_float` safe.
 
-    `parse_float` must not return dicts or lists, because these types
-    would be mixed with parsed TOML tables and arrays, thus confusing
-    the parser. The returned decorated callable raises `ValueError`
-    instead of returning illegal types.
-    """
+	`parse_float` must not return dicts or lists, because these types
+	would be mixed with parsed TOML tables and arrays, thus confusing
+	the parser. The returned decorated callable raises `ValueError`
+	instead of returning illegal types.
+	"""
 	# The default `float` callable never returns illegal types. Optimize it.
 	if parse_float is float:
 		return float
@@ -809,16 +811,19 @@ def make_safe_parse_float(parse_float: ParseFloat) -> ParseFloat:
 	return safe_parse_float
 
 
-def parse_packed_string_array(src: str,
-								pos: Pos,
-								parse_float: ParseFloat = float) -> Tuple[Pos, PackedStringArray]:
+def parse_packed_string_array(
+		src: str,
+		pos: Pos,
+		parse_float: ParseFloat,
+		nest_lvl: int,
+		) -> Tuple[Pos, PackedStringArray]:
 	pos += len("PackedStringArray")  # Skip 'PackedStringArray'
 	pos += 1  # Skip '('
 
 	array: List[str] = []
 
 	while True:
-		pos, val = parse_value(src, pos, parse_float)
+		pos, val = parse_value(src, pos, parse_float, nest_lvl=nest_lvl)
 		array.append(val)
 		pos = skip_comments_and_array_ws(src, pos)
 
@@ -834,7 +839,7 @@ def parse_packed_string_array(src: str,
 			return pos + 1, PackedStringArray(array)
 
 
-def parse_object(src: str, pos: Pos, *, parse_float: ParseFloat = float) -> Tuple[Pos, str]:
+def parse_object(src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int) -> Tuple[Pos, GodotObject]:
 	pos += len("Object")  # Skip 'Object'
 	pos += 1  # Skip '('
 	start_pos = pos
@@ -851,7 +856,7 @@ def parse_object(src: str, pos: Pos, *, parse_float: ParseFloat = float) -> Tupl
 	if src.startswith(')', pos):
 		return pos + 1, GodotObject(object_name, nested_dict.dict)
 	while True:
-		pos, key, value = parse_key_value_pair(src, pos, parse_float)
+		pos, key, value = parse_key_value_pair(src, pos, parse_float, nest_lvl=nest_lvl)
 		key_parent, key_stem = key[:-1], key[-1]
 		if flags.is_(key, Flags.FROZEN):
 			raise TOMLDecodeError(f"Cannot mutate immutable namespace {key}", src, pos)
