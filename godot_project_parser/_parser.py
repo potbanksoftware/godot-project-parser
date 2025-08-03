@@ -38,6 +38,9 @@ from typing import IO, Any, Dict, Final, FrozenSet, Iterable, List, Optional, Tu
 from tomli._re import RE_DATETIME, RE_LOCALTIME, RE_NUMBER, match_to_datetime, match_to_localtime, match_to_number
 from tomli._types import Key, ParseFloat, Pos
 
+# this package
+from godot_project_parser.types import GodotObject, PackedStringArray
+
 __all__ = [
 		"DEPRECATED_DEFAULT",
 		"Flags",
@@ -62,7 +65,9 @@ __all__ = [
 		"parse_key_value_pair",
 		"parse_literal_str",
 		"parse_multiline_str",
+		"parse_object",
 		"parse_one_line_basic_str",
+		"parse_packed_string_array",
 		"parse_value",
 		"skip_chars",
 		"skip_comment",
@@ -95,7 +100,7 @@ ILLEGAL_COMMENT_CHARS: Final = ILLEGAL_BASIC_STR_CHARS
 
 TOML_WS: Final = frozenset(" \t")
 TOML_WS_AND_NEWLINE: Final = TOML_WS | frozenset('\n')
-BARE_KEY_CHARS: Final = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_")
+BARE_KEY_CHARS: Final = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_/.")
 KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
 HEXDIGIT_CHARS: Final = frozenset("abcdefABCDEF0123456789")
 
@@ -231,7 +236,7 @@ def loads(__s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:  # no
 			else:
 				pos, header = create_dict_rule(src, pos, out)
 			pos = skip_chars(src, pos, TOML_WS)
-		elif char != '#':
+		elif char not in "#;":
 			raise TOMLDecodeError("Invalid statement", src, pos)
 
 		# 3. Skip comment
@@ -385,7 +390,7 @@ def skip_comment(src: str, pos: Pos) -> Pos:
 		char: Optional[str] = src[pos]
 	except IndexError:
 		char = None
-	if char == '#':
+	if char in "#;":
 		return skip_until(src, pos + 1, '\n', error_on=ILLEGAL_COMMENT_CHARS, error_on_eof=False)
 	return pos
 
@@ -474,8 +479,8 @@ def parse_key_value_pair(src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: 
 		char: Optional[str] = src[pos]
 	except IndexError:
 		char = None
-	if char != '=':
-		raise TOMLDecodeError("Expected '=' after a key in a key/value pair", src, pos)
+	if char not in "=:":
+		raise TOMLDecodeError("Expected '=' or ':' after a key in a key/value pair", src, pos)
 	pos += 1
 	pos = skip_chars(src, pos, TOML_WS)
 	pos, value = parse_value(src, pos, parse_float, nest_lvl)
@@ -554,6 +559,7 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: in
 	if src.startswith('}', pos):
 		return pos + 1, nested_dict.dict
 	while True:
+		pos = skip_chars(src, pos, '\n')
 		pos, key, value = parse_key_value_pair(src, pos, parse_float, nest_lvl)
 		key_parent, key_stem = key[:-1], key[-1]
 		if flags.is_(key, Flags.FROZEN):
@@ -566,6 +572,7 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: in
 			raise TOMLDecodeError(f"Duplicate inline table key {key_stem!r}", src, pos)
 		nest[key_stem] = value
 		pos = skip_chars(src, pos, TOML_WS)
+		pos = skip_chars(src, pos, '\n')
 		c = src[pos:pos + 1]
 		if c == '}':
 			return pos + 1, nested_dict.dict
@@ -727,6 +734,18 @@ def parse_value(  # noqa: C901
 		if src.startswith("false", pos):
 			return pos + 5, False
 
+	if char == 'P':
+		if src.startswith("PackedStringArray", pos):
+			return parse_packed_string_array(src, pos, parse_float)
+
+	if char == 'O':
+		if src.startswith("Object", pos):
+			return parse_object(src, pos)
+
+	if char == 'n':
+		if src.startswith("null", pos):
+			return pos + 4, None
+
 	# Arrays
 	if char == '[':
 		return parse_array(src, pos, parse_float, nest_lvl + 1)
@@ -788,3 +807,68 @@ def make_safe_parse_float(parse_float: ParseFloat) -> ParseFloat:
 		return float_value
 
 	return safe_parse_float
+
+
+def parse_packed_string_array(src: str,
+								pos: Pos,
+								parse_float: ParseFloat = float) -> Tuple[Pos, PackedStringArray]:
+	pos += len("PackedStringArray")  # Skip 'PackedStringArray'
+	pos += 1  # Skip '('
+
+	array: List[str] = []
+
+	while True:
+		pos, val = parse_value(src, pos, parse_float)
+		array.append(val)
+		pos = skip_comments_and_array_ws(src, pos)
+
+		c = src[pos:pos + 1]
+		if c == ')':
+			return pos + 1, PackedStringArray(array)
+		if c != ',':
+			raise TOMLDecodeError("Unclosed PackedStringArray", src, pos)
+		pos += 1
+
+		pos = skip_comments_and_array_ws(src, pos)
+		if src.startswith(')', pos):
+			return pos + 1, PackedStringArray(array)
+
+
+def parse_object(src: str, pos: Pos, *, parse_float: ParseFloat = float) -> Tuple[Pos, str]:
+	pos += len("Object")  # Skip 'Object'
+	pos += 1  # Skip '('
+	start_pos = pos
+
+	pos = skip_until(src, pos, ',', error_on=ILLEGAL_LITERAL_STR_CHARS, error_on_eof=True)
+
+	object_name = src[start_pos:pos]
+	pos += 1  # Skip comma
+
+	nested_dict = NestedDict()
+	flags = Flags()
+
+	pos = skip_chars(src, pos, TOML_WS)
+	if src.startswith(')', pos):
+		return pos + 1, GodotObject(object_name, nested_dict.dict)
+	while True:
+		pos, key, value = parse_key_value_pair(src, pos, parse_float)
+		key_parent, key_stem = key[:-1], key[-1]
+		if flags.is_(key, Flags.FROZEN):
+			raise TOMLDecodeError(f"Cannot mutate immutable namespace {key}", src, pos)
+		try:
+			nest = nested_dict.get_or_create_nest(key_parent, access_lists=False)
+		except KeyError:
+			raise TOMLDecodeError("Cannot overwrite a value", src, pos) from None
+		if key_stem in nest:
+			raise TOMLDecodeError(f"Duplicate Object key {key_stem!r}", src, pos)
+		nest[key_stem] = value
+		pos = skip_chars(src, pos, TOML_WS)
+		c = src[pos:pos + 1]
+		if c == ')':
+			return pos + 1, GodotObject(object_name, nested_dict.dict)
+		if c != ',':
+			raise TOMLDecodeError("Unclosed Object", src, pos)
+		if isinstance(value, (dict, list)):
+			flags.set(key, Flags.FROZEN, recursive=True)
+		pos += 1
+		pos = skip_chars(src, pos, TOML_WS)
