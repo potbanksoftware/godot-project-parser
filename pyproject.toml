@@ -31,9 +31,10 @@ name = "Dominic Davis-Foster"
 email = "dominic@davis-foster.co.uk"
 
 [project.urls]
-Homepage = "https://github.com/domdfcoding/godot-project-parser"
-"Issue Tracker" = "https://github.com/domdfcoding/godot-project-parser/issues"
-"Source Code" = "https://github.com/domdfcoding/godot-project-parser"
+Homepage = "https://github.com/potbanksoftware/godot-project-parser"
+"Issue Tracker" = "https://github.com/potbanksoftware/godot-project-parser/issues"
+"Source Code" = "https://github.com/potbanksoftware/godot-project-parser"
+Documentation = "https://godot-project-parser.readthedocs.io/en/latest"
 
 [tool.setuptools]
 zip-safe = false
@@ -61,6 +62,10 @@ show_error_codes = true
 [tool.dependency-dash."requirements.txt"]
 order = 10
 
+[tool.dependency-dash."doc-source/requirements.txt"]
+order = 30
+include = false
+
 [tool.snippet-fmt]
 directives = [ "code-block",]
 
@@ -73,3 +78,80 @@ reformat = true
 [tool.snippet-fmt.languages.ini]
 
 [tool.snippet-fmt.languages.json]
+
+[tool.sphinx-pyproject]
+github_username = "potbanksoftware"
+github_repository = "godot-project-parser"
+author = "Dominic Davis-Foster"
+project = "godot-project-parser"
+copyright = "2025 Dominic Davis-Foster"
+language = "en"
+package_root = "godot_project_parser"
+extensions = [
+    "sphinx_toolbox",
+    "sphinx_toolbox.more_autodoc",
+    "sphinx_toolbox.more_autosummary",
+    "sphinx_toolbox.documentation_summary",
+    "sphinx_toolbox.tweaks.param_dash",
+    "sphinxcontrib.toctree_plus",
+    "sphinx_toolbox.tweaks.latex_layout",
+    "sphinx_toolbox.tweaks.latex_toc",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.mathjax",
+    "sphinxcontrib.extras_require",
+    "sphinx.ext.todo",
+    "notfound.extension",
+    "sphinx_copybutton",
+    "sphinxcontrib.default_values",
+    "sphinx_debuginfo",
+    "sphinx_licenseinfo",
+    "seed_intersphinx_mapping",
+    "html_section",
+]
+gitstamp_fmt = "%d %b %Y"
+templates_path = [ "_templates",]
+html_static_path = [ "_static",]
+source_suffix = ".rst"
+master_doc = "index"
+suppress_warnings = [ "image.nonlocal_uri",]
+pygments_style = "default"
+html_theme = "domdf_sphinx_theme"
+html_theme_path = [ "../..",]
+html_show_sourcelink = true
+toctree_plus_types = [
+    "class",
+    "confval",
+    "data",
+    "directive",
+    "enum",
+    "exception",
+    "flag",
+    "function",
+    "namedtuple",
+    "protocol",
+    "role",
+    "typeddict",
+]
+add_module_names = false
+hide_none_rtype = true
+all_typevars = true
+overloads_location = "bottom"
+html_codeblock_linenos_style = "table"
+autodoc_exclude_members = [
+    "__dict__",
+    "__class__",
+    "__dir__",
+    "__weakref__",
+    "__module__",
+    "__annotations__",
+    "__orig_bases__",
+    "__parameters__",
+    "__subclasshook__",
+    "__init_subclass__",
+    "__attrs_attrs__",
+    "__init__",
+    "__new__",
+    "__getnewargs__",
+    "__abstractmethods__",
+    "__hash__",
+]

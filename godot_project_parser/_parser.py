@@ -180,7 +180,13 @@ class TOMLDecodeError(ValueError):
 
 
 def load(__fp: IO[bytes], *, parse_float: ParseFloat = float) -> Dict[str, Any]:
-	"""Parse TOML from a binary file object."""
+	"""
+	Parse ``project.godot`` from a binary file object.
+
+	:param __fp:
+	:param parse_float:
+	"""
+
 	b = __fp.read()
 	try:
 		s = b.decode()
@@ -190,7 +196,12 @@ def load(__fp: IO[bytes], *, parse_float: ParseFloat = float) -> Dict[str, Any]:
 
 
 def loads(__s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
-	"""Parse TOML from a string."""
+	"""
+	Parse ``project.godot`` from a string.
+
+	:param __s:
+	:param parse_float:
+	"""
 
 	# The spec allows converting "\r\n" to "\n", even in string
 	# literals. Let's do so to simplify parsing.

@@ -4,13 +4,12 @@ modname: 'godot-project-parser'
 copyright_years: '2025'
 author: 'Dominic Davis-Foster'
 email: 'dominic@davis-foster.co.uk'
-username: 'domdfcoding'
+username: 'potbanksoftware'
 version: '0.0.0'
 license: 'MIT'
 short_desc: 'Parser and editor of project.godot files.'
 
 enable_conda: false
-enable_docs: false
 on_pypi: false
 enable_tests: false
 
@@ -20,3 +19,6 @@ python_versions:
  - "3.10"
  - "3.11"
  - "3.12"
+
+sphinx_conf_epilogue:
+ - "nitpicky = True"

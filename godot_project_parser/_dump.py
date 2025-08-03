@@ -133,6 +133,11 @@ header = """\
 
 
 def dumps(obj: Mapping[str, Any]) -> str:
+	"""
+	Reconstruct a ``project.godot`` file and return as a string.
+
+	:param obj:
+	"""
 
 	buf = [header]
 	for key, value in obj.items():
@@ -149,4 +154,10 @@ def dumps(obj: Mapping[str, Any]) -> str:
 
 
 def dump(obj: Mapping[str, Any], fp: IO[bytes]) -> None:
+	"""
+	Reconstruct a ``project.godot`` file and write to the given file.
+
+	:param obj:
+	"""
+
 	fp.write(dumps(obj).encode("UTF-8"))
