@@ -27,7 +27,7 @@ lines_between_types = 0
 use_parentheses = true
 remove_redundant_aliases = true
 default_section = "THIRDPARTY"
-known_third_party = []
+known_third_party = [ "tomli",]
 known_first_party = [ "godot_project_parser",]
 
 [config]
