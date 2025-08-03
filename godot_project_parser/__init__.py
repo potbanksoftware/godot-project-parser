@@ -32,7 +32,8 @@ __license__: str = "MIT License"
 __version__: str = "0.0.0"
 __email__: str = "dominic@davis-foster.co.uk"
 
-__all__ = ("loads", "load", "TOMLDecodeError")
+__all__ = ("loads", "load", "dumps", "dump", "TOMLDecodeError")
 
 # this package
+from ._dump import dump, dumps
 from ._parser import TOMLDecodeError, load, loads
