@@ -1,0 +1,18 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+
+[layer_names]
+
+2d_physics/layer_1="Floor/Obstruction"
+2d_physics/layer_2="Deer Back"
+2d_physics/layer_3="Obstacle Bounce"
+2d_physics/layer_4="Interaction"
+2d_physics/layer_5="Trees"
+2d_physics/layer_6="Pushables"
+2d_physics/layer_7="Fox Back"

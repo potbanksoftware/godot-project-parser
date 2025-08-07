@@ -1,0 +1,20 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+
+[application]
+
+boot_splash/fullsize=false
+boot_splash/image="res://art/boot-splash.png"
+boot_splash/image.editor_hint=""
+boot_splash/minimum_display_time=3000
+config/features=PackedStringArray("4.3", "GL Compatibility")
+config/icon="res://art/icon/icon.png"
+config/name="Size Matters"
+config/version="Commit 3b468ca (master)"
+run/main_scene="res://levels/main_menu.tscn"

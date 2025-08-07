@@ -1,0 +1,18 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+
+[autoload]
+
+AmbientMusicPlayer="*res://addons/godot-helpers/ambient_music_player.gd"
+Controller="*res://addons/godot-helpers/controller/controller.gd"
+DebugMenu="*res://addons/debug_menu/debug_menu.tscn"
+GodotHelpersUtils="*res://addons/godot-helpers/utils.gd"
+HUD="*res://modules/hud/hud.tscn"
+LevelManager="*res://modules/shared/level_manager.gd"
+Switcher="*res://modules/switcher.gd"

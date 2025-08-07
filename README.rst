@@ -18,7 +18,7 @@ godot-project-parser
 	* - Docs
 	  - |docs| |docs_check|
 	* - Tests
-	  - |actions_linux| |actions_windows| |actions_macos|
+	  - |actions_linux| |actions_windows| |actions_macos| |coveralls|
 	* - Activity
 	  - |commits-latest| |commits-since| |maintained|
 	* - QA
@@ -57,6 +57,10 @@ godot-project-parser
 .. |requires| image:: https://dependency-dash.repo-helper.uk/github/potbanksoftware/godot-project-parser/badge.svg
 	:target: https://dependency-dash.repo-helper.uk/github/potbanksoftware/godot-project-parser/
 	:alt: Requirements Status
+
+.. |coveralls| image:: https://img.shields.io/coveralls/github/potbanksoftware/godot-project-parser/master?logo=coveralls
+	:target: https://coveralls.io/github/potbanksoftware/godot-project-parser?branch=master
+	:alt: Coverage
 
 .. |codefactor| image:: https://img.shields.io/codefactor/grade/github/potbanksoftware/godot-project-parser?logo=codefactor
 	:target: https://www.codefactor.io/repository/github/potbanksoftware/godot-project-parser

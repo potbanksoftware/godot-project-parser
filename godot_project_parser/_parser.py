@@ -30,11 +30,26 @@ Internal tomli-based parser.
 #
 
 # stdlib
-import sys
-from types import MappingProxyType
-from typing import IO, Any, Dict, Final, FrozenSet, Iterable, List, Optional, Set, Tuple, Type, Union
+from typing import IO, Any, Dict, Final, List, Optional, Tuple
 
 # 3rd party
+from tomli._parser import (
+		ILLEGAL_BASIC_STR_CHARS,
+		ILLEGAL_COMMENT_CHARS,
+		ILLEGAL_LITERAL_STR_CHARS,
+		ILLEGAL_MULTILINE_BASIC_STR_CHARS,
+		MAX_INLINE_NESTING,
+		TOML_WS,
+		TOML_WS_AND_NEWLINE,
+		Flags,
+		NestedDict,
+		TOMLDecodeError,
+		make_safe_parse_float,
+		parse_basic_str_escape,
+		parse_multiline_str,
+		skip_chars,
+		skip_until
+		)
 from tomli._re import RE_DATETIME, RE_LOCALTIME, RE_NUMBER, match_to_datetime, match_to_localtime, match_to_number
 from tomli._types import Key, ParseFloat, Pos
 
@@ -42,141 +57,30 @@ from tomli._types import Key, ParseFloat, Pos
 from godot_project_parser.types import GodotObject, PackedStringArray
 
 __all__ = [
-		"DEPRECATED_DEFAULT",
-		"Flags",
-		"NestedDict",
 		"Output",
-		"TOMLDecodeError",
 		"create_dict_rule",
 		"create_list_rule",
-		"is_unicode_scalar_value",
 		"key_value_rule",
 		"load",
 		"loads",
-		"make_safe_parse_float",
 		"parse_array",
 		"parse_basic_str",
-		"parse_basic_str_escape",
 		"parse_basic_str_escape_multiline",
-		"parse_hex_char",
 		"parse_inline_table",
 		"parse_key",
 		"parse_key_part",
 		"parse_key_value_pair",
 		"parse_literal_str",
-		"parse_multiline_str",
 		"parse_object",
 		"parse_one_line_basic_str",
 		"parse_packed_string_array",
 		"parse_value",
-		"skip_chars",
 		"skip_comment",
-		"skip_comments_and_array_ws",
-		"skip_until"
+		"skip_comments_and_array_ws"
 		]
 
-# Inline tables/arrays are implemented using recursion. Pathologically
-# nested documents cause pure Python to raise RecursionError (which is OK),
-# but mypyc binary wheels will crash unrecoverably (not OK). According to
-# mypyc docs this will be fixed in the future:
-# https://mypyc.readthedocs.io/en/latest/differences_from_python.html#stack-overflows
-# Before mypyc's fix is in, recursion needs to be limited by this library.
-# Choosing `sys.getrecursionlimit()` as maximum inline table/array nesting
-# level, as it allows more nesting than pure Python, but still seems a far
-# lower number than where mypyc binaries crash.
-MAX_INLINE_NESTING: Final = sys.getrecursionlimit()
-
-ASCII_CTRL: Final = frozenset(chr(i) for i in range(32)) | frozenset(chr(127))
-
-# Neither of these sets include quotation mark or backslash. They are
-# currently handled as separate cases in the parser functions.
-ILLEGAL_BASIC_STR_CHARS: Final = ASCII_CTRL - frozenset('\t')
-ILLEGAL_MULTILINE_BASIC_STR_CHARS: Final = ASCII_CTRL - frozenset("\t\n")
-
-ILLEGAL_LITERAL_STR_CHARS: Final = ILLEGAL_BASIC_STR_CHARS
-ILLEGAL_MULTILINE_LITERAL_STR_CHARS: Final = ILLEGAL_MULTILINE_BASIC_STR_CHARS
-
-ILLEGAL_COMMENT_CHARS: Final = ILLEGAL_BASIC_STR_CHARS
-
-TOML_WS: Final = frozenset(" \t")
-TOML_WS_AND_NEWLINE: Final = TOML_WS | frozenset('\n')
 BARE_KEY_CHARS: Final = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_/.")
 KEY_INITIAL_CHARS: Final = BARE_KEY_CHARS | frozenset("\"'")
-HEXDIGIT_CHARS: Final = frozenset("abcdefABCDEF0123456789")
-
-BASIC_STR_ESCAPE_REPLACEMENTS: Final = MappingProxyType({
-		"\\b": '\x08',  # backspace
-		"\\t": '\t',  # tab
-		"\\n": '\n',  # linefeed
-		"\\f": '\x0c',  # form feed
-		"\\r": '\r',  # carriage return
-		'\\"': '"',  # quote
-		"\\\\": '\\',  # backslash
-		})
-
-
-class DEPRECATED_DEFAULT:
-	"""
-	Sentinel to be used as default arg during deprecation period of TOMLDecodeError's free-form arguments.
-	"""
-
-
-class TOMLDecodeError(ValueError):
-	"""
-	An error raised if a document is not valid TOML.
-
-	Adds the following attributes to ValueError:
-	msg: The unformatted error message
-	doc: The TOML document being parsed
-	pos: The index of doc where parsing failed
-	lineno: The line corresponding to pos
-	colno: The column corresponding to pos
-	"""
-
-	def __init__(
-			self,
-			msg: Union[str, Type[DEPRECATED_DEFAULT]] = DEPRECATED_DEFAULT,
-			doc: Union[str, Type[DEPRECATED_DEFAULT]] = DEPRECATED_DEFAULT,
-			pos: Union[Pos, Type[DEPRECATED_DEFAULT]] = DEPRECATED_DEFAULT,
-			*args: Any,
-			):
-		if (args or not isinstance(msg, str) or not isinstance(doc, str) or not isinstance(pos, int)):
-			# stdlib
-			import warnings
-
-			warnings.warn(
-					"Free-form arguments for TOMLDecodeError are deprecated. "
-					"Please set 'msg' (str), 'doc' (str) and 'pos' (int) arguments only.",
-					DeprecationWarning,
-					stacklevel=2,
-					)
-			if pos is not DEPRECATED_DEFAULT:
-				args = pos, *args
-			if doc is not DEPRECATED_DEFAULT:
-				args = doc, *args
-			if msg is not DEPRECATED_DEFAULT:
-				args = msg, *args
-			ValueError.__init__(self, *args)
-			return
-
-		lineno = doc.count('\n', 0, pos) + 1
-		if lineno == 1:
-			colno = pos + 1
-		else:
-			colno = pos - doc.rindex('\n', 0, pos)
-
-		if pos >= len(doc):
-			coord_repr = "end of document"
-		else:
-			coord_repr = f"line {lineno}, column {colno}"
-		errmsg = f"{msg} (at {coord_repr})"
-		ValueError.__init__(self, errmsg)
-
-		self.msg = msg
-		self.doc = doc
-		self.pos = pos
-		self.lineno = lineno
-		self.colno = colno
 
 
 def load(__fp: IO[bytes], *, parse_float: ParseFloat = float) -> Dict[str, Any]:
@@ -267,135 +171,11 @@ def loads(__s: str, *, parse_float: ParseFloat = float) -> Dict[str, Any]:
 	return out.data.dict
 
 
-class Flags:
-	"""Flags that map to parsed keys/namespaces."""
-
-	# Marks an immutable namespace (inline array or inline table).
-	FROZEN: Final = 0
-	# Marks a nest that has been explicitly created and can no longer
-	# be opened using the "[table]" syntax.
-	EXPLICIT_NEST: Final = 1
-
-	def __init__(self) -> None:
-		self._flags: Dict[str, Dict[Any, Any]] = {}
-		self._pending_flags: Set[Tuple[Key, int]] = set()
-
-	def add_pending(self, key: Key, flag: int) -> None:
-		self._pending_flags.add((key, flag))
-
-	def finalize_pending(self) -> None:
-		for key, flag in self._pending_flags:
-			self.set(key, flag, recursive=False)
-		self._pending_flags.clear()
-
-	def unset_all(self, key: Key) -> None:
-		cont = self._flags
-		for k in key[:-1]:
-			if k not in cont:
-				return
-			cont = cont[k]["nested"]
-		cont.pop(key[-1], None)
-
-	def set(self, key: Key, flag: int, *, recursive: bool) -> None:  # noqa: A003  # pylint: disable=redefined-builtin
-		cont = self._flags
-		key_parent, key_stem = key[:-1], key[-1]
-		for k in key_parent:
-			if k not in cont:
-				cont[k] = {"flags": set(), "recursive_flags": set(), "nested": {}}
-			cont = cont[k]["nested"]
-		if key_stem not in cont:
-			cont[key_stem] = {"flags": set(), "recursive_flags": set(), "nested": {}}
-		cont[key_stem]["recursive_flags" if recursive else "flags"].add(flag)
-
-	def is_(self, key: Key, flag: int) -> bool:
-		if not key:
-			return False  # document root has no flags
-		cont = self._flags
-		for k in key[:-1]:
-			if k not in cont:
-				return False
-			inner_cont = cont[k]
-			if flag in inner_cont["recursive_flags"]:
-				return True
-			cont = inner_cont["nested"]
-		key_stem = key[-1]
-		if key_stem in cont:
-			inner_cont = cont[key_stem]
-			return flag in inner_cont["flags"] or flag in inner_cont["recursive_flags"]
-		return False
-
-
-class NestedDict:
-
-	def __init__(self) -> None:
-		# The parsed content of the TOML document
-		self.dict: Dict[str, Any] = {}
-
-	def get_or_create_nest(
-			self,
-			key: Key,
-			*,
-			access_lists: bool = True,
-			) -> Dict[str, Any]:
-		cont: Any = self.dict
-		for k in key:
-			if k not in cont:
-				cont[k] = {}
-			cont = cont[k]
-			if access_lists and isinstance(cont, list):
-				cont = cont[-1]
-			if not isinstance(cont, dict):
-				raise KeyError("There is no nest behind this key")
-		return cont
-
-	def append_nest_to_list(self, key: Key) -> None:
-		cont = self.get_or_create_nest(key[:-1])
-		last_key = key[-1]
-		if last_key in cont:
-			list_ = cont[last_key]
-			if not isinstance(list_, list):
-				raise KeyError("An object other than list found behind this key")
-			list_.append({})
-		else:
-			cont[last_key] = [{}]
-
-
 class Output:
 
 	def __init__(self) -> None:
 		self.data = NestedDict()
 		self.flags = Flags()
-
-
-def skip_chars(src: str, pos: Pos, chars: Iterable[str]) -> Pos:
-	try:
-		while src[pos] in chars:
-			pos += 1
-	except IndexError:
-		pass
-	return pos
-
-
-def skip_until(
-		src: str,
-		pos: Pos,
-		expect: str,
-		*,
-		error_on: FrozenSet[str],
-		error_on_eof: bool,
-		) -> Pos:
-	try:
-		new_pos = src.index(expect, pos)
-	except ValueError:
-		new_pos = len(src)
-		if error_on_eof:
-			raise TOMLDecodeError(f"Expected {expect!r}", src, new_pos) from None
-
-	if not error_on.isdisjoint(src[pos:new_pos]):
-		while src[pos] not in error_on:
-			pos += 1
-		raise TOMLDecodeError(f"Found invalid character {src[pos]!r}", src, pos)
-	return new_pos
 
 
 def skip_comment(src: str, pos: Pos) -> Pos:
@@ -598,46 +378,8 @@ def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: in
 		pos = skip_chars(src, pos, TOML_WS)
 
 
-def parse_basic_str_escape(src: str, pos: Pos, *, multiline: bool = False) -> Tuple[Pos, str]:
-	escape_id = src[pos:pos + 2]
-	pos += 2
-	if multiline and escape_id in {"\\ ", "\\\t", "\\\n"}:
-		# Skip whitespace until next non-whitespace character or end of
-		# the doc. Error if non-whitespace is found before newline.
-		if escape_id != "\\\n":
-			pos = skip_chars(src, pos, TOML_WS)
-			try:
-				char = src[pos]
-			except IndexError:
-				return pos, ''
-			if char != '\n':
-				raise TOMLDecodeError("Unescaped '\\' in a string", src, pos)
-			pos += 1
-		pos = skip_chars(src, pos, TOML_WS_AND_NEWLINE)
-		return pos, ''
-	if escape_id == "\\u":
-		return parse_hex_char(src, pos, 4)
-	if escape_id == "\\U":
-		return parse_hex_char(src, pos, 8)
-	try:
-		return pos, BASIC_STR_ESCAPE_REPLACEMENTS[escape_id]
-	except KeyError:
-		raise TOMLDecodeError("Unescaped '\\' in a string", src, pos) from None
-
-
 def parse_basic_str_escape_multiline(src: str, pos: Pos) -> Tuple[Pos, str]:
 	return parse_basic_str_escape(src, pos, multiline=True)
-
-
-def parse_hex_char(src: str, pos: Pos, hex_len: int) -> Tuple[Pos, str]:
-	hex_str = src[pos:pos + hex_len]
-	if len(hex_str) != hex_len or not HEXDIGIT_CHARS.issuperset(hex_str):
-		raise TOMLDecodeError("Invalid hex value", src, pos)
-	pos += hex_len
-	hex_int = int(hex_str, 16)
-	if not is_unicode_scalar_value(hex_int):
-		raise TOMLDecodeError("Escaped character is not a Unicode scalar value", src, pos)
-	return pos, chr(hex_int)
 
 
 def parse_literal_str(src: str, pos: Pos) -> Tuple[Pos, str]:
@@ -647,35 +389,36 @@ def parse_literal_str(src: str, pos: Pos) -> Tuple[Pos, str]:
 	return pos + 1, src[start_pos:pos]  # Skip ending apostrophe
 
 
-def parse_multiline_str(src: str, pos: Pos, *, literal: bool) -> Tuple[Pos, str]:
-	pos += 3
-	if src.startswith('\n', pos):
-		pos += 1
+## Can there be multiline strings?
+# def parse_multiline_str(src: str, pos: Pos, *, literal: bool) -> Tuple[Pos, str]:
+# 	pos += 3
+# 	if src.startswith('\n', pos):
+# 		pos += 1
 
-	if literal:
-		delim = "'"
-		end_pos = skip_until(
-				src,
-				pos,
-				"'''",
-				error_on=ILLEGAL_MULTILINE_LITERAL_STR_CHARS,
-				error_on_eof=True,
-				)
-		result = src[pos:end_pos]
-		pos = end_pos + 3
-	else:
-		delim = '"'
-		pos, result = parse_basic_str(src, pos, multiline=True)
+# 	if literal:
+# 		delim = "'"
+# 		end_pos = skip_until(
+# 				src,
+# 				pos,
+# 				"'''",
+# 				error_on=ILLEGAL_MULTILINE_LITERAL_STR_CHARS,
+# 				error_on_eof=True,
+# 				)
+# 		result = src[pos:end_pos]
+# 		pos = end_pos + 3
+# 	else:
+# 		delim = '"'
+# 		pos, result = parse_basic_str(src, pos, multiline=True)
 
-	# Add at maximum two extra apostrophes/quotes if the end sequence
-	# is 4 or 5 chars long instead of just 3.
-	if not src.startswith(delim, pos):
-		return pos, result
-	pos += 1
-	if not src.startswith(delim, pos):
-		return pos, result + delim
-	pos += 1
-	return pos, result + (delim * 2)
+# 	# Add at maximum two extra apostrophes/quotes if the end sequence
+# 	# is 4 or 5 chars long instead of just 3.
+# 	if not src.startswith(delim, pos):
+# 		return pos, result
+# 	pos += 1
+# 	if not src.startswith(delim, pos):
+# 		return pos, result + delim
+# 	pos += 1
+# 	return pos, result + (delim * 2)
 
 
 def parse_basic_str(src: str, pos: Pos, *, multiline: bool) -> Tuple[Pos, str]:
@@ -794,32 +537,6 @@ def parse_value(src: str, pos: Pos, parse_float: ParseFloat, nest_lvl: int) -> T
 		return pos + 4, parse_float(first_four)
 
 	raise TOMLDecodeError("Invalid value", src, pos)
-
-
-def is_unicode_scalar_value(codepoint: int) -> bool:
-	return (0 <= codepoint <= 55295) or (57344 <= codepoint <= 1114111)
-
-
-def make_safe_parse_float(parse_float: ParseFloat) -> ParseFloat:
-	"""
-	A decorator to make `parse_float` safe.
-
-	`parse_float` must not return dicts or lists, because these types
-	would be mixed with parsed TOML tables and arrays, thus confusing
-	the parser. The returned decorated callable raises `ValueError`
-	instead of returning illegal types.
-	"""
-	# The default `float` callable never returns illegal types. Optimize it.
-	if parse_float is float:
-		return float
-
-	def safe_parse_float(float_str: str) -> Any:
-		float_value = parse_float(float_str)
-		if isinstance(float_value, (dict, list)):
-			raise ValueError("parse_float must not return dicts or lists")
-		return float_value
-
-	return safe_parse_float
 
 
 def parse_packed_string_array(

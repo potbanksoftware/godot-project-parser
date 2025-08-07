@@ -32,8 +32,42 @@ __license__: str = "MIT License"
 __version__: str = "0.0.0"
 __email__: str = "dominic@davis-foster.co.uk"
 
-__all__ = ("loads", "load", "dumps", "dump", "TOMLDecodeError")
+__all__ = ("loads", "load", "load_path", "dumps", "dump", "dump_to_path", "TOMLDecodeError")
+
+# stdlib
+from typing import TYPE_CHECKING, Any, Dict, Mapping
+
+# 3rd party
+from tomli._types import ParseFloat
 
 # this package
 from ._dump import dump, dumps
 from ._parser import TOMLDecodeError, load, loads
+
+if TYPE_CHECKING:
+	# 3rd party
+	from domdf_python_tools.typing import PathLike
+
+
+def load_path(path: "PathLike", *, parse_float: ParseFloat = float) -> Dict[str, Any]:
+	"""
+	Parse ``project.godot`` from the given path.
+
+	:param path:
+	:param parse_float:
+	"""
+
+	with open(path, "rb") as fp:
+		return load(fp, parse_float=parse_float)
+
+
+def dump_to_path(obj: Mapping[str, Any], path: "PathLike") -> None:
+	"""
+	Reconstruct a ``project.godot`` file and write to the given path.
+
+	:param obj:
+	:param path:
+	"""
+
+	with open(path, "wb") as fp:
+		dump(obj, fp)

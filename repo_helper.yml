@@ -12,7 +12,7 @@ short_desc: 'Parser and editor of project.godot files.'
 use_whey: true
 enable_conda: false
 on_pypi: false
-enable_tests: false
+min_coverage: 76
 
 python_versions:
  - 3.8

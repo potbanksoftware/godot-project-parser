@@ -1,0 +1,12 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+
+[addons]
+
+AutoExportVersion/version_config_file="res://addons/AutoExportVersion/auto_export_version_config_file.gd"

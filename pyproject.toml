@@ -36,8 +36,6 @@ platforms = [ "Windows", "macOS", "Linux",]
 license-key = "MIT"
 package = "godot_project_parser"
 
-[tool.importcheck]
-
 [tool.mypy]
 python_version = "3.8"
 namespace_packages = true
@@ -51,6 +49,10 @@ order = 10
 
 [tool.dependency-dash."doc-source/requirements.txt"]
 order = 30
+include = false
+
+[tool.dependency-dash."tests/requirements.txt"]
+order = 20
 include = false
 
 [tool.snippet-fmt]
