@@ -91,7 +91,7 @@ godot-project-parser
 .. |language| image:: https://img.shields.io/github/languages/top/potbanksoftware/godot-project-parser
 	:alt: GitHub top language
 
-.. |commits-since| image:: https://img.shields.io/github/commits-since/potbanksoftware/godot-project-parser/v0.0.0
+.. |commits-since| image:: https://img.shields.io/github/commits-since/potbanksoftware/godot-project-parser/v0.1.0
 	:target: https://github.com/potbanksoftware/godot-project-parser/pulse
 	:alt: GitHub commits since tagged version
 

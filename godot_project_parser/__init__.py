@@ -29,7 +29,7 @@ Parser and editor of project.godot files.
 __author__: str = "Dominic Davis-Foster"
 __copyright__: str = "2025 Dominic Davis-Foster"
 __license__: str = "MIT License"
-__version__: str = "0.0.0"
+__version__: str = "0.1.0"
 __email__: str = "dominic@davis-foster.co.uk"
 
 __all__ = ("loads", "load", "load_path", "dumps", "dump", "dump_to_path", "TOMLDecodeError")

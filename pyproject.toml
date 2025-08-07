@@ -4,7 +4,7 @@ build-backend = "whey"
 
 [project]
 name = "godot-project-parser"
-version = "0.0.0"
+version = "0.1.0"
 description = "Parser and editor of project.godot files."
 readme = "README.rst"
 keywords = []
