@@ -21,8 +21,10 @@ godot-project-parser
 		  - |docs| |docs_check|
 		* - Tests
 		  - |actions_linux| |actions_windows| |actions_macos| |coveralls|
+		* - PyPI
+		  - |pypi-version| |supported-versions| |supported-implementations| |wheel|
 		* - Activity
-		  - |commits-latest| |commits-since| |maintained|
+		  - |commits-latest| |commits-since| |maintained| |pypi-downloads|
 		* - QA
 		  - |codefactor| |actions_flake8| |actions_mypy|
 		* - Other
@@ -66,6 +68,26 @@ godot-project-parser
 	.. |codefactor| codefactor-shield::
 		:alt: CodeFactor Grade
 
+	.. |pypi-version| pypi-shield::
+		:project: godot-project-parser
+		:version:
+		:alt: PyPI - Package Version
+
+	.. |supported-versions| pypi-shield::
+		:project: godot-project-parser
+		:py-versions:
+		:alt: PyPI - Supported Python Versions
+
+	.. |supported-implementations| pypi-shield::
+		:project: godot-project-parser
+		:implementations:
+		:alt: PyPI - Supported Implementations
+
+	.. |wheel| pypi-shield::
+		:project: godot-project-parser
+		:wheel:
+		:alt: PyPI - Wheel
+
 	.. |license| github-shield::
 		:license:
 		:alt: License
@@ -85,6 +107,11 @@ godot-project-parser
 	.. |maintained| maintained-shield:: 2025
 		:alt: Maintenance
 
+	.. |pypi-downloads| pypi-shield::
+		:project: godot-project-parser
+		:downloads: month
+		:alt: PyPI - Downloads
+
 .. end shields
 
 Installation
@@ -93,6 +120,7 @@ Installation
 .. start installation
 
 .. installation:: godot-project-parser
+	:pypi:
 	:github:
 
 .. end installation
