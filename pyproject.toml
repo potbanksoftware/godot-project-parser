@@ -1,27 +1,14 @@
 [build-system]
-requires = [ "setuptools!=61.*,<=67.1.0,>=40.6.0", "wheel>=0.34.2",]
-build-backend = "setuptools.build_meta"
+requires = [ "whey",]
+build-backend = "whey"
 
 [project]
 name = "godot-project-parser"
 version = "0.0.0"
 description = "Parser and editor of project.godot files."
 readme = "README.rst"
-requires-python = ">=3.8"
 keywords = []
-classifiers = [
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: Implementation :: CPython",
-]
-dynamic = [ "dependencies",]
+dynamic = [ "requires-python", "classifiers", "dependencies",]
 
 [project.license]
 file = "LICENSE"
