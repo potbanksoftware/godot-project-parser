@@ -28,7 +28,7 @@ interact_events = [
 						"unicode": 101,
 						"location": 0,
 						"echo": False,
-						"script": None
+						"script": None,
 						}
 				),
 		GodotObject(
@@ -40,7 +40,7 @@ interact_events = [
 						"button_index": 2,
 						"pressure": 0.0,
 						"pressed": True,
-						"script": None
+						"script": None,
 						}
 				)
 		]
@@ -54,7 +54,7 @@ jump_events = [
 						"button_index": 0,
 						"pressure": 0.0,
 						"pressed": True,
-						"script": None
+						"script": None,
 						}
 				),
 		GodotObject(
@@ -75,7 +75,7 @@ jump_events = [
 						"unicode": 32,
 						"location": 0,
 						"echo": False,
-						"script": None
+						"script": None,
 						}
 				)
 		]
@@ -95,7 +95,7 @@ input_dict = {
 						"rendering": {
 								"renderer/rendering_method": "gl_compatibility",
 								"renderer/rendering_method.mobile": "gl_compatibility",
-								"textures/canvas_textures/default_texture_filter": 0
+								"textures/canvas_textures/default_texture_filter": 0,
 								}
 						},
 								id="rendering"),
@@ -107,7 +107,7 @@ input_dict = {
 								"2d_physics/layer_4": "Interaction",
 								"2d_physics/layer_5": "Trees",
 								"2d_physics/layer_6": "Pushables",
-								"2d_physics/layer_7": "Fox Back"
+								"2d_physics/layer_7": "Fox Back",
 								},
 						},
 								id="layer-names"),
@@ -118,7 +118,7 @@ input_dict = {
 										PackedStringArray([
 												"res://addons/AutoExportVersion/plugin.cfg",
 												"res://addons/debug_menu/plugin.cfg",
-												"res://addons/godot-helpers/plugin.cfg"
+												"res://addons/godot-helpers/plugin.cfg",
 												])
 								},
 						},
@@ -130,7 +130,7 @@ input_dict = {
 				pytest.param({
 						"debug": {
 								"gdscript/warnings/exclude_addons": False,
-								"gdscript/warnings/untyped_declaration": 1
+								"gdscript/warnings/untyped_declaration": 1,
 								},
 						},
 								id="debug"),
@@ -143,7 +143,7 @@ input_dict = {
 								"GodotHelpersUtils": "*res://addons/godot-helpers/utils.gd",
 								"HUD": "*res://modules/hud/hud.tscn",
 								"LevelManager": "*res://modules/shared/level_manager.gd",
-								"Switcher": "*res://modules/switcher.gd"
+								"Switcher": "*res://modules/switcher.gd",
 								}
 						},
 								id="autoload"),
@@ -158,7 +158,7 @@ input_dict = {
 								"config/icon": "res://art/icon/icon.png",
 								"config/name": "Size Matters",
 								"config/version": "Commit 3b468ca (master)",
-								"run/main_scene": "res://levels/main_menu.tscn"
+								"run/main_scene": "res://levels/main_menu.tscn",
 								}
 						},
 								id="application"),

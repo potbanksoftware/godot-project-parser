@@ -33,7 +33,7 @@ from typing import IO, Any, Dict, List, Mapping, Union
 # this package
 from godot_project_parser.types import GodotObject, PackedStringArray
 
-__all__ = [
+__all__ = (
 		"dump",
 		"dump_dict",
 		"dump_godot_object",
@@ -42,8 +42,8 @@ __all__ = [
 		"dump_primitive",
 		"dump_table",
 		"dump_value",
-		"dumps"
-		]
+		"dumps",
+		)
 
 
 def dump_table(table: Dict[str, Any]) -> str:
@@ -158,6 +158,7 @@ def dump(obj: Mapping[str, Any], fp: IO[bytes]) -> None:
 	Reconstruct a ``project.godot`` file and write to the given file.
 
 	:param obj:
+	:param fp:
 	"""
 
 	fp.write(dumps(obj).encode("UTF-8"))

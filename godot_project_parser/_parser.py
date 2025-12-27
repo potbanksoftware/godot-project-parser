@@ -76,7 +76,7 @@ __all__ = [
 		"parse_packed_string_array",
 		"parse_value",
 		"skip_comment",
-		"skip_comments_and_array_ws"
+		"skip_comments_and_array_ws",
 		]
 
 BARE_KEY_CHARS: Final = frozenset("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_/.")
